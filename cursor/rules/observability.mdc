@@ -1,0 +1,62 @@
+---
+description: Observability standards — add Datadog metrics and structured logging to new service code
+globs: ["**/*.ts"]
+alwaysApply: false
+---
+
+# Observability Standards
+
+When writing or generating new service-layer code, include observability by default. Don't wait for a bug to add it.
+
+## Metrics to add
+
+For every new public service method or Lambda handler:
+
+```ts
+// Count invocations
+metrics.increment('service.method_name.called', { partition, stage });
+
+// Count outcomes
+metrics.increment('service.method_name.success', { partition });
+metrics.increment('service.method_name.error', { partition, error_type: err.name });
+
+// Time external calls
+const start = Date.now();
+await externalCall();
+metrics.timing('service.method_name.external_call_ms', Date.now() - start);
+```
+
+## Log context
+
+Every log line in a service method should include relevant identifiers:
+
+```ts
+logger.info('Processing consent update', {
+  userId,
+  partition,
+  purpose,
+  operation: 'upsertConsent',
+});
+```
+
+Don't log raw DynamoDB objects or full user records — log identifiers only.
+
+## What to always log
+
+- Entry point of a Lambda handler (with key input identifiers, never PII)
+- Any external call (DynamoDB, SQS, external API) — before and after, or on failure
+- Any branching decision that affects data (which path was taken and why)
+- Errors with full context (don't just rethrow without logging)
+
+## What NOT to log
+
+- Full user preference records or consent values (PII risk)
+- Passwords, tokens, keys
+- High-cardinality values as metric tags (avoid logging individual userIds as tags)
+
+## Flag for review
+
+If generating code that skips observability due to unclear metric naming or missing context:
+```ts
+// TODO(observability): add metrics here — unclear what dimension to tag
+```

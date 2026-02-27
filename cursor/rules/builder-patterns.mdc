@@ -1,0 +1,71 @@
+---
+description: Builder and repository patterns for the preference management codebase
+globs: ["**/preference-management/**/*.ts", "**/consent-backend/**/*.ts", "**/pm-utils/**/*.ts"]
+alwaysApply: false
+---
+
+# Builder and Repository Patterns
+
+## Use builders for DynamoDB key construction
+
+Don't inline key construction in business logic. Delegate to a builder:
+
+```ts
+// Bad
+const key = {
+  primaryKey: userId,
+  'category#type': `${PreferenceStoreCategoryType.Purpose}#${purpose}`,
+};
+
+// Good
+const key = PurposeRecordBuilder.build({ userId, purpose });
+```
+
+## Repository pattern for data access
+
+Business logic should speak the language of the domain, not DynamoDB:
+
+```ts
+// Bad — business logic knows about DynamoDB structure
+const items = await table.query({
+  KeyConditionExpression: 'primaryKey = :pk',
+  ExpressionAttributeValues: { ':pk': userId },
+});
+const purposes = items.map(item => /* manual mapping */);
+
+// Good — business logic speaks domain language
+const purposes = await consentRepository.getPurposeConsents(userId);
+```
+
+## Domain aggregates and value objects
+
+When introducing new concepts, make them explicit types with behavior:
+
+```ts
+// Value object pattern
+class LinkedIdentifier {
+  constructor(
+    readonly name: string,
+    readonly value: string,
+    readonly scope: 'unique' | 'shared',
+  ) {}
+
+  static fromStorageKey(raw: string): LinkedIdentifier {
+    // parsing logic in ONE place
+  }
+
+  toStorageKey(): string { /* ... */ }
+}
+```
+
+## Keep storage shapes at the edge
+
+io-ts / zod codecs validate at DynamoDB/API boundaries. They should not be passed through service layers. Map to domain types immediately after validation:
+
+```ts
+// At the boundary
+const raw = ConsentPreferencesByCategoryCodec.decode(dbItem);
+// Immediately map to domain type
+const record = ConsentRecord.fromStorage(raw);
+// Business logic only sees ConsentRecord
+```

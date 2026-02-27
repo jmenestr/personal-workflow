@@ -1,0 +1,76 @@
+---
+description: Error handling standards — no silent failures, explicit types, proper propagation
+globs: ["**/*.ts"]
+alwaysApply: true
+---
+
+# Error Handling Standards
+
+## No empty catch blocks
+
+```ts
+// Bad — silently swallows errors
+try {
+  await riskyOperation();
+} catch {}
+
+// Bad — hides the error
+try {
+  await riskyOperation();
+} catch (e) {
+  return '';
+}
+
+// Good
+try {
+  await riskyOperation();
+} catch (err) {
+  logger.error('riskyOperation failed', { err, context });
+  throw err; // or handle explicitly
+}
+```
+
+## Don't swallow errors in streaming/concurrent operations
+
+When using `Promise.allSettled` or batch operations, always check and surface rejected items:
+
+```ts
+const results = await Promise.allSettled(items.map(process));
+const failures = results.filter(r => r.status === 'rejected');
+if (failures.length > 0) {
+  logger.error('Batch had failures', { count: failures.length, failures });
+}
+```
+
+## Explicit error types at boundaries
+
+At service/Lambda boundaries, map unknown errors to typed errors before propagating:
+
+```ts
+// Bad
+throw new Error('something went wrong');
+
+// Good
+throw new ConsentUpdateError('userId not found', { userId, partition });
+```
+
+## No re-throwing without context
+
+If you catch and rethrow, add context:
+
+```ts
+// Bad
+} catch (err) { throw err; }
+
+// Good
+} catch (err) {
+  throw new Error(`Failed to upsert consent for userId=${userId}`, { cause: err });
+}
+```
+
+## Validate at system boundaries only
+
+Don't add defensive null checks inside internal functions where the type system guarantees non-null. Do validate at:
+- API/Lambda entry points (external input)
+- DynamoDB query results (external data)
+- Parsed configuration values

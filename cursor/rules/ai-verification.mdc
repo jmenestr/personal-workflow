@@ -1,0 +1,52 @@
+---
+description: AI-generated code verification — flag things that require human review before trusting
+globs: ["**/*.ts", "**/*.tsx"]
+alwaysApply: true
+---
+
+# AI-Generated Code Verification
+
+When generating code, explicitly mark things that require human verification. Don't produce confident-looking code that contains non-obvious assumptions.
+
+## Always flag
+
+### Ordering dependencies
+If the correctness of an operation depends on execution order, say so:
+```ts
+// VERIFY: message deletion must happen AFTER datapoint deletion
+// to avoid orphaned messages. See deleteOrphanedResources.ts pattern.
+await deleteDatapoints(userId);
+await deleteMessages(userId);
+```
+
+### Cross-team impact
+If a change touches a shared interface, query, or table used by multiple teams:
+```ts
+// VERIFY: this query is used by Goomba, Pikachu, Resetti, Waluigi teams.
+// Confirm change is safe for all consumers before merging.
+```
+
+### Performance assumptions
+If you've written a query or operation that may degrade at scale:
+```ts
+// VERIFY: this adds a JOIN that may be 10-20x slower at scale.
+// Check pganalyze / Datadog before enabling for high-traffic orgs.
+```
+
+### Non-obvious boolean/state logic
+If the logic encodes a subtle domain rule that isn't obvious from the code:
+```ts
+// VERIFY: tokenCount === 2 means unique identifier (3 = shared).
+// This is a storage artifact — see LinkedIdentifier value object proposal.
+```
+
+### Destructive operations
+Any delete, truncate, or irreversible mutation:
+```ts
+// VERIFY: this deletes records. Confirm idempotency and
+// that re-running won't delete valid data.
+```
+
+## Don't over-flag
+
+Only flag things that genuinely require human judgment. Don't add VERIFY comments to standard patterns that are obviously correct — that trains people to ignore them.

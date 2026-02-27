@@ -1,0 +1,73 @@
+---
+description: TypeScript domain modeling patterns — avoid primitive obsession, storage leakage, and unsafe type casting
+globs: ["**/*.ts", "**/*.tsx"]
+alwaysApply: true
+---
+
+# TypeScript Domain Patterns
+
+## No primitive obsession
+
+Don't use raw strings to represent meaningful domain concepts. Wrap them in value objects.
+
+**Bad:**
+```ts
+const userId = `${encryptedIdentifier} ${partition}`;
+const [enc, part] = userId.split(' ');
+```
+
+**Good:**
+```ts
+class ConsentUserId {
+  constructor(
+    readonly encryptedIdentifier: string,
+    readonly partition: string,
+  ) {}
+  toString() { return `${this.encryptedIdentifier} ${this.partition}`; }
+  static parse(raw: string): ConsentUserId { /* one place */ }
+}
+```
+
+## No manual key construction
+
+Don't concatenate strings to build storage keys inline. Use a builder.
+
+**Bad:**
+```ts
+'category#type': `${PreferenceStoreCategoryType.Purpose}#${purpose}`
+```
+
+**Good:**
+```ts
+PurposeRecordBuilder.buildCategoryType(purpose)
+```
+
+## No `as Type` assertions on uncertain data
+
+Don't cast to narrow a type you haven't actually verified. Use type guards or proper narrowing.
+
+**Bad:**
+```ts
+const consent = record.consent as boolean;
+```
+
+**Good:**
+```ts
+if (typeof record.consent !== 'boolean') throw new Error('...');
+const consent = record.consent;
+```
+
+## Storage shapes ≠ domain types
+
+A DynamoDB codec (io-ts, zod) validates structure at the edge. It is not a domain model. Don't pass raw DynamoDB documents through business logic — map to domain types at the repository boundary.
+
+## Prefer explicit unions over boolean flags
+
+```ts
+// Bad
+isUnique: boolean
+
+// Good
+type IdentifierScope = 'unique' | 'shared';
+scope: IdentifierScope
+```
