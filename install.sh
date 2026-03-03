@@ -47,5 +47,14 @@ for rule in "$RULES_SRC"/*.mdc; do
   echo "  ✓ cursor rule: $(basename "$rule")"
 done
 
+# ── Claude settings ────────────────────────────────────────────────────────────
+SETTINGS_SRC="$REPO_DIR/claude/settings.json"
+SETTINGS_DEST="$HOME/.claude/settings.json"
+
+if [[ -f "$SETTINGS_SRC" ]]; then
+  cp "$SETTINGS_SRC" "$SETTINGS_DEST"
+  echo "  ✓ settings.json → $SETTINGS_DEST"
+fi
+
 echo ""
-echo "Done. Skills, CLAUDE.md, shell functions, and cursor rules are installed."
+echo "Done. Skills, CLAUDE.md, shell functions, cursor rules, and settings are installed."
