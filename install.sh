@@ -24,6 +24,18 @@ CLAUDE_DEST="$HOME/.claude/CLAUDE.md"
 cp "$REPO_DIR/claude/CLAUDE.md" "$CLAUDE_DEST"
 echo "  ✓ CLAUDE.md → $CLAUDE_DEST"
 
+# ── Shell functions ────────────────────────────────────────────────────────────
+SHELL_FUNCTIONS_SRC="$REPO_DIR/claude/shell-functions.zsh"
+if [[ -f "$SHELL_FUNCTIONS_SRC" ]]; then
+  if grep -q "Claude Code shell functions" ~/.zshrc 2>/dev/null; then
+    echo "  ✓ shell functions already in ~/.zshrc"
+  else
+    echo "" >> ~/.zshrc
+    cat "$SHELL_FUNCTIONS_SRC" >> ~/.zshrc
+    echo "  ✓ shell functions → ~/.zshrc"
+  fi
+fi
+
 # ── Cursor rules ───────────────────────────────────────────────────────────────
 RULES_SRC="$REPO_DIR/cursor/rules"
 RULES_DEST="$HOME/.cursor/rules"
@@ -36,4 +48,4 @@ for rule in "$RULES_SRC"/*.mdc; do
 done
 
 echo ""
-echo "Done. Skills, CLAUDE.md, and cursor rules are installed."
+echo "Done. Skills, CLAUDE.md, shell functions, and cursor rules are installed."
