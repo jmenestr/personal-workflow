@@ -5,24 +5,27 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "Installing personal workflow from $REPO_DIR..."
 
-# ── Claude skills ──────────────────────────────────────────────────────────────
+# ── Skills (Claude + Cursor) ───────────────────────────────────────────────────
 SKILLS_SRC="$REPO_DIR/claude/skills"
-SKILLS_DEST="$HOME/.claude/skills"
 
-mkdir -p "$SKILLS_DEST"
-
-for skill_dir in "$SKILLS_SRC"/*/; do
-  skill_name="$(basename "$skill_dir")"
-  dest="$SKILLS_DEST/$skill_name"
-  mkdir -p "$dest"
-  cp "$skill_dir/SKILL.md" "$dest/SKILL.md"
-  echo "  ✓ skill: $skill_name"
+for dest_base in "$HOME/.claude/skills" "$HOME/.cursor/skills"; do
+  mkdir -p "$dest_base"
+  for skill_dir in "$SKILLS_SRC"/*/; do
+    skill_name="$(basename "$skill_dir")"
+    dest="$dest_base/$skill_name"
+    mkdir -p "$dest"
+    cp "$skill_dir/SKILL.md" "$dest/SKILL.md"
+  done
+  echo "  ✓ skills → $dest_base"
 done
 
-# ── CLAUDE.md ──────────────────────────────────────────────────────────────────
-CLAUDE_DEST="$HOME/.claude/CLAUDE.md"
-cp "$REPO_DIR/claude/CLAUDE.md" "$CLAUDE_DEST"
-echo "  ✓ CLAUDE.md → $CLAUDE_DEST"
+# ── CLAUDE.md + AGENTS.md ──────────────────────────────────────────────────────
+cp "$REPO_DIR/claude/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
+echo "  ✓ CLAUDE.md → ~/.claude/CLAUDE.md"
+
+mkdir -p "$HOME/.cursor"
+cp "$REPO_DIR/claude/CLAUDE.md" "$HOME/.cursor/AGENTS.md"
+echo "  ✓ AGENTS.md → ~/.cursor/AGENTS.md"
 
 # ── Shell functions ────────────────────────────────────────────────────────────
 SHELL_FUNCTIONS_SRC="$REPO_DIR/claude/shell-functions.zsh"
@@ -57,4 +60,4 @@ if [[ -f "$SETTINGS_SRC" ]]; then
 fi
 
 echo ""
-echo "Done. Skills, CLAUDE.md, shell functions, cursor rules, and settings are installed."
+echo "Done. Skills (Claude + Cursor), CLAUDE.md, AGENTS.md, shell functions, cursor rules, and settings are installed."
