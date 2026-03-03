@@ -59,5 +59,15 @@ if [[ -f "$SETTINGS_SRC" ]]; then
   echo "  ✓ settings.json → $SETTINGS_DEST"
 fi
 
+# ── Cursor agent (Linux only) ──────────────────────────────────────────────────
+if [[ "$(uname)" == "Linux" ]]; then
+  if command -v cursor &>/dev/null; then
+    echo "  ✓ Cursor agent already installed"
+  else
+    echo "  → Installing Cursor agent..."
+    curl https://cursor.com/install -fsS | bash && echo "  ✓ Cursor agent installed"
+  fi
+fi
+
 echo ""
 echo "Done. Skills (Claude + Cursor), CLAUDE.md, AGENTS.md, shell functions, cursor rules, and settings are installed."
